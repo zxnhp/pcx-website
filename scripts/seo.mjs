@@ -1,0 +1,15 @@
+import { readFile, writeFile } from 'node:fs/promises';
+const input = process.argv[2];
+if (!input) throw new Error('用法：node scripts/seo.mjs https://您的正式域名');
+const url = new URL(input);
+if (url.protocol !== 'https:' || url.pathname !== '/' || url.search || url.hash || url.username || url.password) throw new Error('请传入 HTTPS 正式域名，不要包含路径或查询参数');
+const origin = url.origin;
+const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+const index = new URL('../frontend/index.html', import.meta.url);
+let html = await readFile(index, 'utf8');
+html = html.replace(/\s*<link rel="canonical"[^>]*>/g, '').replace(/\s*<meta property="og:url"[^>]*>/g, '');
+html = html.replace('</head>', `  <link rel="canonical" href="${escape(origin)}/">\n  <meta property="og:url" content="${escape(origin)}/">\n</head>`);
+await writeFile(index, html);
+await writeFile(new URL('../frontend/robots.txt', import.meta.url), `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${origin}/sitemap.xml\n`);
+await writeFile(new URL('../frontend/sitemap.xml', import.meta.url), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${escape(origin)}/</loc></url></urlset>\n`);
+console.log('已生成真实域名对应的 canonical、robots.txt 和 sitemap.xml');

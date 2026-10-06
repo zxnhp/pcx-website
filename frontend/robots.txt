@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+# 正式上线后添加真实站点地图 URL：Sitemap: https://您的域名/sitemap.xml
